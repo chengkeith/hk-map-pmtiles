@@ -63,7 +63,7 @@ jobs:
   build-raster:
     needs: build-vector
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 400
 
     steps:
       - name: checkout repository
@@ -74,34 +74,33 @@ jobs:
         with:
           name: vector-tiles
 
-      - name: install system dependencies
+      - name: prepare directory
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev libgbm-dev libosmesa6-dev xvfb
+          mkdir render_data
+          cp render-style.json render_data/
+          mv hong-kong.pmtiles render_data/
 
-      - name: setup node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: install tileserver-gl
-        run: npm install -g tileserver-gl
-
-      - name: prepare tileserver directories
+      - name: generate raster mbtiles
         run: |
-          mkdir -p data
-          mv hong-kong.pmtiles data/
+          docker run --rm \
+            -v "$(pwd)/render_data":/app/render_data \
+            -v "$(pwd)":/outputs \
+            communityfirst/mapgl-tile-renderer \
+            --style self \
+            --stylelocation /app/render_data/render-style.json \
+            --stylesources /app/render_data \
+            --bounds "113.8,22.1,114.5,22.6" \
+            --tiletype "webp" \
+            --ratio 2 \
+            --minzoom 0 \
+            --maxzoom 16 \
+            --filename hong-kong-raster \
+            --outputdir /outputs
 
-      - name: generate raster mbtiles from vector pmtiles
-        run: |
-          xvfb-run tileserver-gl config.json \
-            --export basic hong-kong-raster.mbtiles \
-            --minzoom 0 --maxzoom 14 \
-            --bbox 113.8,22.1,114.5,22.6
-      
       - name: download pmtiles cli
         run: |
-          wget https://github.com/protomaps/pmtiles/releases/download/v2.11.0/pmtiles-linux-amd64 -O pmtiles
+          wget https://github.com/protomaps/go-pmtiles/releases/download/v1.28.2/go-pmtiles_1.28.2_Linux_x86_64.tar.gz
+          tar -xzf go-pmtiles_1.28.2_Linux_x86_64.tar.gz
           chmod +x pmtiles
 
       - name: convert mbtiles to pmtiles
