@@ -129,7 +129,7 @@ jobs:
       - name: prepare directory
         run: |
           mkdir render_data
-          cp render-styles-dark.json render_data/
+          cp render-style-dark.json render_data/
           mv hong-kong.pmtiles render_data/
 
       - name: generate dark raster mbtiles
@@ -139,7 +139,7 @@ jobs:
             -v "$(pwd)":/outputs \
             communityfirst/mapgl-tile-renderer \
             --style self \
-            --stylelocation /app/render_data/render-styles-dark.json \
+            --stylelocation /app/render_data/render-style-dark.json \
             --stylesources /app/render_data \
             --bounds "113.8,22.1,114.5,22.6" \
             --tiletype "webp" \
