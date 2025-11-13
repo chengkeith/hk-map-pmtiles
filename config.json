@@ -1,0 +1,20 @@
+{
+  "options": {
+    "paths": {
+      "root": ".",
+      "styles": "styles",
+      "pmtiles": "data"
+    },
+    "serveStaticMaps": true
+  },
+  "styles": {
+    "basic": {
+      "style": "basic.json"
+    }
+  },
+  "data": {
+    "hong-kong-vector": {
+      "pmtiles": "hong-kong.pmtiles"
+    }
+  }
+}
