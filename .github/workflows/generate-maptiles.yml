@@ -1,4 +1,4 @@
-name: Generate maptiles
+name: generate maptiles
 
 on:
   workflow_dispatch:
@@ -11,12 +11,12 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  build-vector:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
     steps:
-      - name: Checkout repository
+      - name: checkout repository
         uses: actions/checkout@v4
 
       - name: protomaps basemaps repo
@@ -41,7 +41,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: generate tiles
+      - name: generate vector tiles
         working-directory: basemaps/tiles
         run: |
           mvn -B clean package
@@ -54,29 +54,90 @@ jobs:
           
           mv hong-kong.pmtiles ../../hong-kong.pmtiles
 
-      - name: rename
-        run: mv hong-kong.pmtiles hong-kong.pmtiles.gz
-
-      - name: Prepare artifact directory
-        run: |
-          mkdir -p _site
-          mv hong-kong.pmtiles.gz _site/
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact for pages deployment
-        uses: actions/upload-pages-artifact@v3
+      - name: upload vector artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: './_site'
-  
+          name: vector-tiles
+          path: hong-kong.pmtiles
+
+  build-raster:
+    needs: build-vector
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: download vector artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vector-tiles
+
+      - name: install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1-mesa-dev libgbm-dev libosmesa6-dev xvfb
+
+      - name: setup node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: install tileserver-gl
+        run: npm install -g tileserver-gl
+
+      - name: prepare tileserver directories
+        run: |
+          mkdir -p data
+          mv hong-kong.pmtiles data/
+
+      - name: generate raster mbtiles from vector pmtiles
+        run: |
+          xvfb-run tileserver-gl config.json \
+            --export basic hong-kong-raster.mbtiles \
+            --minzoom 0 --maxzoom 14 \
+            --bbox 113.8,22.1,114.5,22.6
+      
+      - name: download pmtiles cli
+        run: |
+          wget https://github.com/protomaps/pmtiles/releases/download/v2.11.0/pmtiles-linux-amd64 -O pmtiles
+          chmod +x pmtiles
+
+      - name: convert mbtiles to pmtiles
+        run: ./pmtiles convert hong-kong-raster.mbtiles hong-kong-raster.pmtiles
+
+      - name: upload raster artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: raster-tiles
+          path: hong-kong-raster.pmtiles
+
   deploy:
-    needs: build
+    needs: [build-vector, build-raster]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
-      - name: Deploy to GitHub Pages
+      - name: download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: prepare artifact directory
+        run: |
+          mkdir -p _site
+          mv vector-tiles/hong-kong.pmtiles _site/hong-kong.pmtiles.gz
+          mv raster-tiles/hong-kong-raster.pmtiles _site/hong-kong-raster.pmtiles.gz
+
+      - name: setup pages
+        uses: actions/configure-pages@v5
+
+      - name: upload artifact for pages deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './_site'
+
+      - name: deploy to github pages
         id: deployment
         uses: actions/deploy-pages@v4
