@@ -44,11 +44,11 @@ jobs:
       - name: generate vector tiles
         working-directory: basemaps/tiles
         run: |
-          mvn -b clean package
+          mvn -B clean package
           
           mv ../../hong-kong.osm.pbf data/sources/
           
-          java -xmx10g -jar target/protomaps-basemap-head-with-deps.jar \
+          java -Xmx10g -jar target/protomaps-basemap-HEAD-with-deps.jar \
             --area=hong-kong \
             --download
           
@@ -99,8 +99,8 @@ jobs:
 
       - name: download pmtiles cli
         run: |
-          wget https://github.com/protomaps/go-pmtiles/releases/download/v1.28.2/go-pmtiles_1.28.2_linux_x86_64.tar.gz
-          tar -xzf go-pmtiles_1.28.2_linux_x86_64.tar.gz
+          wget https://github.com/protomaps/go-pmtiles/releases/download/v1.28.2/go-pmtiles_1.28.2_Linux_x86_64.tar.gz
+          tar -xzf go-pmtiles_1.28.2_Linux_x86_64.tar.gz
           chmod +x pmtiles
 
       - name: convert mbtiles to pmtiles
@@ -151,8 +151,8 @@ jobs:
 
       - name: download pmtiles cli
         run: |
-          wget https://github.com/protomaps/go-pmtiles/releases/download/v1.28.2/go-pmtiles_1.28.2_linux_x86_64.tar.gz
-          tar -xzf go-pmtiles_1.28.2_linux_x86_64.tar.gz
+          wget https://github.com/protomaps/go-pmtiles/releases/download/v1.28.2/go-pmtiles_1.28.2_Linux_x86_64.tar.gz
+          tar -xzf go-pmtiles_1.28.2_Linux_x86_64.tar.gz
           chmod +x pmtiles
 
       - name: convert mbtiles to pmtiles
