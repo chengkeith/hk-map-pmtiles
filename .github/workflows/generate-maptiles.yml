@@ -25,14 +25,14 @@ jobs:
 
       - name: download osm
         run: |
-          wget https://download.geofabrik.de/asia/china/hong-kong-latest.osm.pbf -O hong-kong.osm.pbf
+          wget https://download.geofabrik.de/asia/china/hong-kong-latest.osm.pbf -o hong-kong.osm.pbf
 
       - name: download data sources
         working-directory: basemaps/tiles
         run: |
           mkdir -p data/sources
-          wget -c https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip -O data/sources/natural_earth_vector.sqlite.zip
-          wget -c --tries=5 https://qrank.toolforge.org/download/qrank.csv.gz -O data/sources/qrank.csv.gz
+          wget -c https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip -o data/sources/natural_earth_vector.sqlite.zip
+          wget -c --tries=5 https://qrank.toolforge.org/download/qrank.csv.gz -o data/sources/qrank.csv.gz
 
       - name: setup java
         uses: actions/setup-java@v4
@@ -44,11 +44,11 @@ jobs:
       - name: generate vector tiles
         working-directory: basemaps/tiles
         run: |
-          mvn -B clean package
+          mvn -b clean package
           
           mv ../../hong-kong.osm.pbf data/sources/
           
-          java -Xmx10g -jar target/protomaps-basemap-HEAD-with-deps.jar \
+          java -xmx10g -jar target/protomaps-basemap-head-with-deps.jar \
             --area=hong-kong \
             --download
           
@@ -60,10 +60,10 @@ jobs:
           name: vector-tiles
           path: hong-kong.pmtiles
 
-  build-raster:
+  build-raster-light:
     needs: build-vector
     runs-on: ubuntu-latest
-    timeout-minutes: 400
+    timeout-minutes: 500
 
     steps:
       - name: checkout repository
@@ -80,7 +80,7 @@ jobs:
           cp render-style.json render_data/
           mv hong-kong.pmtiles render_data/
 
-      - name: generate raster mbtiles
+      - name: generate light raster mbtiles
         run: |
           docker run --rm \
             -v "$(pwd)/render_data":/app/render_data \
@@ -93,14 +93,14 @@ jobs:
             --tiletype "webp" \
             --ratio 2 \
             --minzoom 0 \
-            --maxzoom 16 \
+            --maxzoom 17 \
             --filename hong-kong-raster \
             --outputdir /outputs
 
       - name: download pmtiles cli
         run: |
-          wget https://github.com/protomaps/go-pmtiles/releases/download/v1.28.2/go-pmtiles_1.28.2_Linux_x86_64.tar.gz
-          tar -xzf go-pmtiles_1.28.2_Linux_x86_64.tar.gz
+          wget https://github.com/protomaps/go-pmtiles/releases/download/v1.28.2/go-pmtiles_1.28.2_linux_x86_64.tar.gz
+          tar -xzf go-pmtiles_1.28.2_linux_x86_64.tar.gz
           chmod +x pmtiles
 
       - name: convert mbtiles to pmtiles
@@ -109,11 +109,63 @@ jobs:
       - name: upload raster artifact
         uses: actions/upload-artifact@v4
         with:
-          name: raster-tiles
+          name: raster-tiles-light
           path: hong-kong-raster.pmtiles
 
+  build-raster-dark:
+    needs: build-vector
+    runs-on: ubuntu-latest
+    timeout-minutes: 500
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: download vector artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vector-tiles
+
+      - name: prepare directory
+        run: |
+          mkdir render_data
+          cp render-styles-dark.json render_data/
+          mv hong-kong.pmtiles render_data/
+
+      - name: generate dark raster mbtiles
+        run: |
+          docker run --rm \
+            -v "$(pwd)/render_data":/app/render_data \
+            -v "$(pwd)":/outputs \
+            communityfirst/mapgl-tile-renderer \
+            --style self \
+            --stylelocation /app/render_data/render-styles-dark.json \
+            --stylesources /app/render_data \
+            --bounds "113.8,22.1,114.5,22.6" \
+            --tiletype "webp" \
+            --ratio 2 \
+            --minzoom 0 \
+            --maxzoom 17 \
+            --filename hong-kong-raster-dark \
+            --outputdir /outputs
+
+      - name: download pmtiles cli
+        run: |
+          wget https://github.com/protomaps/go-pmtiles/releases/download/v1.28.2/go-pmtiles_1.28.2_linux_x86_64.tar.gz
+          tar -xzf go-pmtiles_1.28.2_linux_x86_64.tar.gz
+          chmod +x pmtiles
+
+      - name: convert mbtiles to pmtiles
+        run: ./pmtiles convert hong-kong-raster-dark.mbtiles hong-kong-raster-dark.pmtiles
+
+      - name: upload raster artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: raster-tiles-dark
+          path: hong-kong-raster-dark.pmtiles
+
   deploy:
-    needs: [build-vector, build-raster]
+    needs: [build-vector, build-raster-light, build-raster-dark]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -127,7 +179,8 @@ jobs:
         run: |
           mkdir -p _site
           mv vector-tiles/hong-kong.pmtiles _site/hong-kong.pmtiles.gz
-          mv raster-tiles/hong-kong-raster.pmtiles _site/hong-kong-raster.pmtiles.gz
+          mv raster-tiles-light/hong-kong-raster.pmtiles _site/hong-kong-raster.pmtiles.gz
+          mv raster-tiles-dark/hong-kong-raster-dark.pmtiles _site/hong-kong-raster-dark.pmtiles.gz
 
       - name: setup pages
         uses: actions/configure-pages@v5
