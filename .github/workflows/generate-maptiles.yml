@@ -2,6 +2,27 @@ name: generate maptiles
 
 on:
   workflow_dispatch:
+    inputs:
+      build_vector:
+        description: 'Build vector tiles'
+        required: false
+        default: true
+        type: boolean
+      build_labels:
+        description: 'Build labels tiles'
+        required: false
+        default: true
+        type: boolean
+      build_raster_light:
+        description: 'Build raster light tiles'
+        required: false
+        default: true
+        type: boolean
+      build_raster_dark:
+        description: 'Build raster dark tiles'
+        required: false
+        default: true
+        type: boolean
 
   schedule:
     - cron: '0 16 */4 * *'
@@ -10,8 +31,15 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  CRON_BUILD_VECTOR: true
+  CRON_BUILD_LABELS: true
+  CRON_BUILD_RASTER_LIGHT: true
+  CRON_BUILD_RASTER_DARK: true
+
 jobs:
   build-vector:
+    if: github.event_name == 'schedule' && env.CRON_BUILD_VECTOR == 'true' || inputs.build_vector == true
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -55,6 +83,7 @@ jobs:
           mv hong-kong.pmtiles ../../hong-kong.pmtiles
 
       - name: generate labels pmtiles
+        if: github.event_name == 'schedule' && env.CRON_BUILD_LABELS == 'true' || inputs.build_labels == true
         run: sudo apt-get update && sudo apt-get install -y tippecanoe && tile-join -l places -l pois -l roads -o hong-kong-labels.pmtiles hong-kong.pmtiles
 
       - name: upload vector artifact
@@ -66,6 +95,7 @@ jobs:
             hong-kong-labels.pmtiles
 
   build-raster-light:
+    if: (github.event_name == 'schedule' && env.CRON_BUILD_RASTER_LIGHT == 'true' || inputs.build_raster_light == true) && (github.event_name == 'schedule' && env.CRON_BUILD_VECTOR == 'true' || inputs.build_vector == true)
     needs: build-vector
     runs-on: ubuntu-latest
     timeout-minutes: 500
@@ -118,6 +148,7 @@ jobs:
           path: hong-kong-raster.pmtiles
 
   build-raster-dark:
+    if: (github.event_name == 'schedule' && env.CRON_BUILD_RASTER_DARK == 'true' || inputs.build_raster_dark == true) && (github.event_name == 'schedule' && env.CRON_BUILD_VECTOR == 'true' || inputs.build_vector == true)
     needs: build-vector
     runs-on: ubuntu-latest
     timeout-minutes: 500
@@ -170,6 +201,7 @@ jobs:
           path: hong-kong-raster-dark.pmtiles
 
   deploy:
+    if: always() && (needs.build-vector.result == 'success' || needs.build-raster-light.result == 'success' || needs.build-raster-dark.result == 'success')
     needs: [build-vector, build-raster-light, build-raster-dark]
     runs-on: ubuntu-latest
     environment:
@@ -183,10 +215,10 @@ jobs:
       - name: prepare artifact directory
         run: |
           mkdir -p _site
-          mv vector-tiles/hong-kong.pmtiles _site/hong-kong.pmtiles.gz
-          mv vector-tiles/hong-kong-labels.pmtiles _site/hong-kong-labels.pmtiles.gz
-          mv raster-tiles-light/hong-kong-raster.pmtiles _site/hong-kong-raster.pmtiles.gz
-          mv raster-tiles-dark/hong-kong-raster-dark.pmtiles _site/hong-kong-raster-dark.pmtiles.gz
+          [ -f vector-tiles/hong-kong.pmtiles ] && mv vector-tiles/hong-kong.pmtiles _site/hong-kong.pmtiles.gz || true
+          [ -f vector-tiles/hong-kong-labels.pmtiles ] && mv vector-tiles/hong-kong-labels.pmtiles _site/hong-kong-labels.pmtiles.gz || true
+          [ -f raster-tiles-light/hong-kong-raster.pmtiles ] && mv raster-tiles-light/hong-kong-raster.pmtiles _site/hong-kong-raster.pmtiles.gz || true
+          [ -f raster-tiles-dark/hong-kong-raster-dark.pmtiles ] && mv raster-tiles-dark/hong-kong-raster-dark.pmtiles _site/hong-kong-raster-dark.pmtiles.gz || true
 
       - name: setup pages
         uses: actions/configure-pages@v5
