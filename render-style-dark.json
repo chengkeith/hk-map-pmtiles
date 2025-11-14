@@ -5,12 +5,8 @@
   "sprite": "https://protomaps.github.io/basemaps-assets/sprites/v4/dark",
   "sources": {
     "protomaps": {
-      "attribution": "\u003Ca href=\"https://github.com/protomaps/basemaps\"\u003EProtomaps\u003C/a\u003E © \u003Ca href=\"https://openstreetmap.org\"\u003EOpenStreetMap\u003C/a\u003E",
       "type": "vector",
-      "tiles": [
-        "https://api.protomaps.com/tiles/v4/{z}/{x}/{y}.mvt?key=7039399dc5aaf254"
-      ],
-      "maxzoom": 15
+      "url": "pmtiles://hong-kong"
     }
   },
   "layers": [
@@ -1834,4 +1830,5 @@
       }
     }
   ]
+
 }
