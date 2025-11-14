@@ -18,14 +18,13 @@ When manually triggering the workflow, uncheck any of these options:
 - Build raster dark tiles
 
 #### For scheduled runs:
-Edit the environment variables in `.github/workflows/generate-maptiles.yml`:
-```yaml
-env:
-  CRON_BUILD_VECTOR: true
-  CRON_BUILD_LABELS: true
-  CRON_BUILD_RASTER_LIGHT: true
-  CRON_BUILD_RASTER_DARK: true
-```
+Set repository variables in Settings → Secrets and variables → Actions → Variables:
+- `CRON_BUILD_VECTOR`
+- `CRON_BUILD_LABELS`
+- `CRON_BUILD_RASTER_LIGHT`
+- `CRON_BUILD_RASTER_DARK`
+
+If variables are not set, all tile types will be generated
 
 ### Styles
 
