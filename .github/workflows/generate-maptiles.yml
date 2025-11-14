@@ -226,6 +226,14 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+      - name: remove .gz
+        run: |
+          mkdir -p _site
+          [ -f _site/hong-kong.pmtiles.gz ] && mv _site/hong-kong.pmtiles.gz _site/hong-kong.pmtiles || true
+          [ -f _site/hong-kong-labels.pmtiles.gz ] && mv _site/hong-kong-labels.pmtiles.gz _site/hong-kong-labels.pmtiles || true
+          [ -f _site/hong-kong-raster.pmtiles.gz ] && mv _site/hong-kong-raster.pmtiles.gz _site/hong-kong-raster.pmtiles || true
+          [ -f _site/hong-kong-raster-dark.pmtiles.gz ] && mv _site/hong-kong-raster-dark.pmtiles.gz _site/hong-kong-raster-dark.pmtiles || true
+
       - name: deploy to R2
         uses: ryand56/r2-upload-action@latest
         continue-on-error: true
