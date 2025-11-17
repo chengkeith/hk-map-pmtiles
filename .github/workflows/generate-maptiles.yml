@@ -37,10 +37,10 @@ jobs:
       - name: generate vector tiles
         run: |
           wget https://github.com/onthegomap/planetiler/releases/latest/download/planetiler.jar
-          java -Xmx10g -jar planetiler.jar --download --area=hong-kong
+          java -Xmx10g -jar planetiler.jar --download --area=hong-kong --output=hong-kong.pmtiles
 
       - name: generate labels pmtiles
-        if: github.event_name == 'schedule' && vars.CRON_BUILD_LABELS != 'false' || inputs.build_labels == true
+        #if: github.event_name == 'schedule' && vars.CRON_BUILD_LABELS != 'false' || inputs.build_labels == true
         run: sudo apt-get update && sudo apt-get install -y tippecanoe && tile-join -l places -l pois -l roads -o hong-kong-labels.pmtiles hong-kong.pmtiles
 
       - name: upload vector artifact
