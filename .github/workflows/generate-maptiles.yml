@@ -41,18 +41,15 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v4
 
-      - name: protomaps basemaps repo
-        run: |
-          git clone https://github.com/protomaps/basemaps.git
-
       - name: download osm
+        working-directory: basemaps/tiles
         run: |
-          wget https://download.geofabrik.de/asia/china/hong-kong-latest.osm.pbf -O hong-kong.osm.pbf
+          mkdir -p data/sources
+          wget https://download.geofabrik.de/asia/china/hong-kong-latest.osm.pbf -O data/sources/hong-kong.osm.pbf
 
       - name: download data sources
         working-directory: basemaps/tiles
         run: |
-          mkdir -p data/sources
           wget -c https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip -O data/sources/natural_earth_vector.sqlite.zip
           wget -c --tries=5 https://qrank.toolforge.org/download/qrank.csv.gz -O data/sources/qrank.csv.gz
 
@@ -66,14 +63,8 @@ jobs:
       - name: generate vector tiles
         working-directory: basemaps/tiles
         run: |
-          mvn -B clean package
-          
-          mv ../../hong-kong.osm.pbf data/sources/
-          
-          java -Xmx10g -jar target/protomaps-basemap-HEAD-with-deps.jar \
-            --area=hong-kong \
-            --download
-          
+          wget https://github.com/onthegomap/planetiler/releases/latest/download/planetiler.jar
+          java -Xmx10g -jar planetiler.jar --osm-path="data/sources/hong-kong.osm.pbf"
           mv hong-kong.pmtiles ../../hong-kong.pmtiles
 
       - name: generate labels pmtiles
@@ -118,8 +109,8 @@ jobs:
             --style self \
             --stylelocation /app/render_data/render-style.json \
             --stylesources /app/render_data \
-            --bounds "113.824768,22.155611,114.407272,22.566464" \
-            --tiletype "webp" \
+            --bounds "114.0,22.2,114.2,22.3" \
+            --tiletype "png" \
             --ratio 2 \
             --minzoom 0 \
             --maxzoom 17 \
@@ -159,7 +150,7 @@ jobs:
       - name: prepare directory
         run: |
           mkdir render_data
-          cp render-style-dark.json render_data/
+          cp positron.json render_data/
           mv hong-kong.pmtiles render_data/
 
       - name: generate dark raster mbtiles
@@ -169,10 +160,10 @@ jobs:
             -v "$(pwd)":/outputs \
             communityfirst/mapgl-tile-renderer \
             --style self \
-            --stylelocation /app/render_data/render-style-dark.json \
+            --stylelocation /app/render_data/positron.json \
             --stylesources /app/render_data \
-            --bounds "113.824768,22.155611,114.407272,22.566464" \
-            --tiletype "webp" \
+            --bounds "114.0,22.2,114.2,22.3" \
+            --tiletype "png" \
             --ratio 2 \
             --minzoom 0 \
             --maxzoom 17 \
