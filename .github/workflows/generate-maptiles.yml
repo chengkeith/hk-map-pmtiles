@@ -8,24 +8,11 @@ on:
         required: false
         default: true
         type: boolean
-      build_labels:
-        description: 'Build labels tiles'
-        required: false
-        default: true
-        type: boolean
-      build_raster_light:
-        description: 'Build raster light tiles'
-        required: false
-        default: true
-        type: boolean
       build_raster_dark:
         description: 'Build raster dark tiles'
         required: false
         default: true
         type: boolean
-
-  schedule:
-    - cron: '0 16 */4 * *'
 
 permissions:
   pages: write
