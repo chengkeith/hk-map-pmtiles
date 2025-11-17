@@ -33,11 +33,6 @@ jobs:
           mkdir -p data/sources
           wget https://download.geofabrik.de/asia/china/hong-kong-latest.osm.pbf -O data/sources/hong-kong.osm.pbf
 
-      - name: download data sources
-        run: |
-          wget -c https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip -O data/sources/natural_earth_vector.sqlite.zip
-          wget -c --tries=5 https://qrank.toolforge.org/download/qrank.csv.gz -O data/sources/qrank.csv.gz
-
       - name: setup java
         uses: actions/setup-java@v4
         with:
