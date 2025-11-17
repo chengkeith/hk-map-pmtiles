@@ -29,13 +29,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: download osm
-        working-directory: basemaps/tiles
         run: |
           mkdir -p data/sources
           wget https://download.geofabrik.de/asia/china/hong-kong-latest.osm.pbf -O data/sources/hong-kong.osm.pbf
 
       - name: download data sources
-        working-directory: basemaps/tiles
         run: |
           wget -c https://naciscdn.org/naturalearth/packages/natural_earth_vector.sqlite.zip -O data/sources/natural_earth_vector.sqlite.zip
           wget -c --tries=5 https://qrank.toolforge.org/download/qrank.csv.gz -O data/sources/qrank.csv.gz
@@ -48,7 +46,6 @@ jobs:
           cache: 'maven'
 
       - name: generate vector tiles
-        working-directory: basemaps/tiles
         run: |
           wget https://github.com/onthegomap/planetiler/releases/latest/download/planetiler.jar
           java -Xmx10g -jar planetiler.jar --osm-path="data/sources/hong-kong.osm.pbf"
