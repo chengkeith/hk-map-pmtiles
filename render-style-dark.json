@@ -5,7 +5,7 @@
   "sources": {
     "carto": {
       "type": "vector",
-      "url": "/app/render_data/tiles.json"
+      "url": "tiles.json"
     }
   },
   "sprite": "https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/sprite",
