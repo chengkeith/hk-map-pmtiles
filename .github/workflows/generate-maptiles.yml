@@ -38,6 +38,7 @@ jobs:
         run: |
           wget https://github.com/onthegomap/planetiler/releases/latest/download/planetiler.jar
           java -Xmx10g -jar planetiler.jar --download --area=hong-kong --output=hong-kong.pmtiles
+          mv hong-kong.pmtiles ../../hong-kong.pmtiles
 
       - name: generate labels pmtiles
         #if: github.event_name == 'schedule' && vars.CRON_BUILD_LABELS != 'false' || inputs.build_labels == true
@@ -85,7 +86,7 @@ jobs:
             --tiletype "png" \
             --ratio 2 \
             --minzoom 0 \
-            --maxzoom 17 \
+            --maxzoom 13 \
             --filename hong-kong-raster \
             --outputdir /outputs
 
@@ -138,7 +139,7 @@ jobs:
             --tiletype "png" \
             --ratio 2 \
             --minzoom 0 \
-            --maxzoom 17 \
+            --maxzoom 13 \
             --filename hong-kong-raster-dark \
             --outputdir /outputs
 
@@ -155,7 +156,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: raster-tiles-dark
-          path: hong-kong-raster-dark.pmtiles
+          path: |
+            hong-kong-raster-dark.mbtiles
+            hong-kong-raster-dark.pmtiles
 
   deploy:
     if: always() && (needs.build-vector.result == 'success' || needs.build-raster-light.result == 'success' || needs.build-raster-dark.result == 'success')
