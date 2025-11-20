@@ -52,6 +52,8 @@ jobs:
           echo "-------"
           ls -la data/
           echo "-------"
+          ls -la data/tmp
+          echo "-------"
           ls -la data/sources
           tile-join -l places -l pois -l roads -o hong-kong-labels.pmtiles hong-kong.pmtiles
 
@@ -134,7 +136,7 @@ jobs:
       - name: prepare directory
         run: |
           mkdir render_data
-          cp positron.json render_data/
+          cp tiles.json render-style-dark.json render_data/
           mv hong-kong.pmtiles render_data/
 
       - name: generate dark raster mbtiles
@@ -144,7 +146,7 @@ jobs:
             -v "$(pwd)":/outputs \
             communityfirst/mapgl-tile-renderer \
             --style self \
-            --stylelocation /app/render_data/positron.json \
+            --stylelocation /app/render_data/render-style-dark.json \
             --stylesources /app/render_data \
             --bounds "114.0,22.2,114.2,22.3" \
             --tiletype "png" \
@@ -161,7 +163,10 @@ jobs:
           chmod +x pmtiles
 
       - name: convert mbtiles to pmtiles
-        run: ./pmtiles convert hong-kong-raster-dark.mbtiles hong-kong-raster-dark.pmtiles
+        run: |
+          pwd
+          ls -la
+          ./pmtiles convert hong-kong-raster-dark.mbtiles hong-kong-raster-dark.pmtiles
 
       - name: upload raster artifact
         uses: actions/upload-artifact@v4
